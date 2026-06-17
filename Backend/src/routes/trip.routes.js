@@ -1,0 +1,13 @@
+const express=require('express');
+const tripController=require("../controllers/trip.controller");
+const router=express.Router();
+const {verifyUser}=require('../middlewares/auth.middleware');
+const {verifyTrip}=require('../middlewares/trip.middleware');
+
+router.post('/create_trip',verifyUser,tripController.create);
+
+router.post('/login_trip',verifyUser,tripController.access);
+
+router.post('/logout_trip',verifyUser,verifyTrip,tripController.logout);
+
+module.exports=router;
