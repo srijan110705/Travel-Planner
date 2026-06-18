@@ -64,4 +64,34 @@ async function logout(req, res) {
     });
 }
 
-module.exports={access,logout,create};
+async function addDestination(req, res) {
+    try {
+        const { trip_id, destination_data } = req.body;
+
+        // 1. Securely save the new data to MongoDB
+        const updatedTrip = await tripModel.findOneAndUpdate(
+            { trip_id: trip_id },
+            { $push: { itinerary: destination_data } },
+            { new: true } // Returns the newly updated document
+        );
+
+        if (!updatedTrip) {
+            return res.status(404).json({ message: "Trip not found" });
+        }
+
+        // 2. Grab the 'io' instance we saved in app.js
+        const io = req.app.get('io');
+
+        // 3. Broadcast the fresh database data to EVERYONE in that trip's room
+        io.to(trip_id).emit('trip_updated', updatedTrip);
+
+        // 4. Respond to the user who clicked "Save"
+        res.status(200).json({ message: "Destination added successfully", trip: updatedTrip });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
+module.exports={access,logout,create,addDestination};

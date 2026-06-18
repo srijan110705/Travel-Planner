@@ -10,4 +10,6 @@ router.post('/login_trip',verifyUser,tripController.access);
 
 router.post('/logout_trip',verifyUser,verifyTrip,tripController.logout);
 
+router.post('/add_destination', verifyUser, verifyTrip, tripController.addDestination);
+
 module.exports=router;
