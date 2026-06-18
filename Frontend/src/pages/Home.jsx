@@ -69,7 +69,7 @@ const Home=()=> {
           <p>Smart Debt Splitting</p>
         </div>
         <div className="flex flex-col items-center gap-2">
-          <span className="text-2xl">⚡</span>
+          <span className="text-2xl"></span>
           <p>Real-Time Collabaration</p>
         </div>
       </div>
