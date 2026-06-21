@@ -5,6 +5,7 @@ import TravelAssistant from './pages/TravelAssisstant';
 import TripDashboard from './pages/TripDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import MainDashboard from './pages/Dashboard';
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/register" element={<Register/>}/>
         <Route path="/travel_assistant" element={<TravelAssistant />}/>
         <Route path="/trip_dashboard" element={<TripDashboard />}/>
+        <Route path="/dashboard" element={<MainDashboard />}/>
       </Routes>
     </BrowserRouter>
   )
