@@ -93,5 +93,49 @@ async function addDestination(req, res) {
         res.status(500).json({ message: "Server error" });
     }
 }
+async function addExpense(req, res) {
+    try {
+        const { trip_id, title, amount, paid_by } = req.body;
 
-module.exports={access,logout,create,addDestination};
+        // Find the trip and push the new expense into the array
+        const updatedTrip = await tripModel.findOneAndUpdate(
+            { trip_id: trip_id },
+            { 
+                $push: { 
+                    expenses: { title, amount: Number(amount), paid_by } 
+                } 
+            },
+            { new: true } // This tells MongoDB to return the updated document
+        );
+
+        if (!updatedTrip) {
+            return res.status(404).json({ message: "Trip not found" });
+        }
+
+        res.status(200).json({ 
+            message: "Expense added successfully", 
+            expenses: updatedTrip.expenses 
+        });
+
+    } catch (error) {
+        console.error("Expense Error:", error);
+        res.status(500).json({ message: "Failed to add expense" });
+    }
+}
+async function getMyTrips(req, res) {
+    try {
+        // req.user.id comes from your verifyUser middleware!
+        console.log("Checking User Token:", req.user);
+        const userId = req.user.id; 
+
+        // Find every trip where this user's ID is in the members array
+        const myTrips = await tripModel.find({ members: userId });
+
+        res.status(200).json({ trips: myTrips });
+    } catch (error) {
+        console.error("Fetch Trips Error:", error);
+        res.status(500).json({ message: "Failed to fetch trips" });
+    }
+}
+
+module.exports={access,logout,create,addDestination,addExpense,getMyTrips};

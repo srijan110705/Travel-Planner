@@ -32,7 +32,7 @@ const Login=()=> {
         withCredentials: true 
       });
 
-      navigate('/trip_dashboard');
+      navigate('/dashboard');
       
     } catch (err) {
       const backendMessage = err.response?.data?.message || 'Failed to connect to the server.';

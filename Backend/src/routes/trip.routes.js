@@ -12,4 +12,8 @@ router.post('/logout_trip',verifyUser,verifyTrip,tripController.logout);
 
 router.post('/add_destination', verifyUser, verifyTrip, tripController.addDestination);
 
+router.post('/add_expense', verifyUser, tripController.addExpense);
+
+router.get('/my_trips', verifyUser, tripController.getMyTrips);
+
 module.exports=router;
