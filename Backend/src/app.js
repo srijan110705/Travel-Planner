@@ -36,4 +36,4 @@ app.use('/api/auth',authRoutes);
 app.use('/api/trip',tripRoutes);
 app.use('/api/ai',aiRoutes);
 
-module.exports=app;
+module.exports=server;

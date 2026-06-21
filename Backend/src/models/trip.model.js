@@ -17,6 +17,7 @@ const tripSchema=new mongoose.Schema({
     dates: { 
         type: String, 
         default: "Dates TBD" },
+    itinerary: { type: Array, default: [] },
     members: [{ 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'user' }],
