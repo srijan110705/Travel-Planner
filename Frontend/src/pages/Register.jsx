@@ -39,7 +39,10 @@ const Register=()=> {
         withCredentials: true 
       });
 
-      navigate('/trip_dashboard');
+      // Store user info in localStorage for Dashboard
+      localStorage.setItem('currentUser', JSON.stringify({ username: username }));
+      
+      navigate('/dashboard');
       
     } catch (err) {
       const backendMessage = err.response?.data?.message || 'Failed to connect to the server.';

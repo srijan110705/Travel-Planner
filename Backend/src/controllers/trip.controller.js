@@ -131,63 +131,14 @@ async function getMyTrips(req, res) {
     try {
         const userId = req.user.id; 
 
-        const myTrips = await tripModel.find({ members: userId });
+        const myTrips = await tripModel
+            .find({ members: userId })
+            .populate({ path: 'members', select: 'username email' });
 
         res.status(200).json({ trips: myTrips });
     } catch (error) {
         console.error("Fetch Trips Error:", error);
         res.status(500).json({ message: "Failed to fetch trips" });
-    }
-}
-
-async function getDebtSettlements(req, res) {
-    try {
-        const { trip_id } = req.body;
-        const trip = await tripModel.findOne({ trip_id });
-        if (!trip) return res.status(404).json({ message: "Trip not found" });
-
-        let total = 0;
-        const paid = {};
-        
-        // Calculate total and how much each person paid
-        trip.expenses.forEach(e => {
-            total += e.amount;
-            paid[e.paid_by] = (paid[e.paid_by] || 0) + e.amount;
-        });
-
-        const participants = Object.keys(paid);
-        const split = participants.length ? total / participants.length : 0;
-        
-        // Separate into who owes money (debtors) and who gets money back (creditors)
-        let creditors = [], debtors = [];
-        participants.forEach(p => {
-            const diff = paid[p] - split;
-            if (diff > 0.01) creditors.push({ person: p, amount: diff });
-            else if (diff < -0.01) debtors.push({ person: p, amount: Math.abs(diff) });
-        });
-
-        // Calculate who pays whom
-        const settlements = [];
-        let i = 0, j = 0;
-        while (i < debtors.length && j < creditors.length) {
-            let amount = Math.min(debtors[i].amount, creditors[j].amount);
-            settlements.push({ 
-                from: debtors[i].person, 
-                to: creditors[j].person, 
-                amount: amount.toFixed(2) 
-            });
-            
-            debtors[i].amount -= amount;
-            creditors[j].amount -= amount;
-            
-            if (debtors[i].amount < 0.01) i++;
-            if (creditors[j].amount < 0.01) j++;
-        }
-
-        res.status(200).json({ total, split, settlements });
-    } catch (error) {
-        console.error("Settlement error:", error);
-        res.status(500).json({ message: "Failed to calculate settlements" });
     }
 }
 
@@ -228,4 +179,4 @@ async function getOptimalRoute(req, res) {
     }
 }
 
-module.exports = { access, logout, create, addDestination, addExpense, getMyTrips, getDebtSettlements, getOptimalRoute };
+module.exports = { access, logout, create, addDestination, addExpense, getMyTrips, getOptimalRoute };

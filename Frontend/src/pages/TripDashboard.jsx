@@ -28,7 +28,7 @@ const TripDashboard = ({ tripId }) => {
     // 3. Saving data works exactly like a normal web app
     const handleSave = async () => {
         try {
-            const response = await axios.post('http://localhost:3000/api/trips/add_destination', {
+            const response = await axios.post('http://localhost:3000/api/trip/add_destination', {
                 trip_id: tripId,
                 destination_data: newDestination
             }, { withCredentials: true });

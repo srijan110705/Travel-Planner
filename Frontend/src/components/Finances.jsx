@@ -149,7 +149,7 @@ const Finances=({ tripId, initialExpenses, members })=> {
             ) : (
               // Slice and reverse so the newest expenses show up at the very top
               expenses.slice().reverse().map((exp, i) => ( 
-                <div key={i} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div key={`${exp.title}-${exp.amount}-${exp.paid_by}-${i}`} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <div>
                     <p className="font-bold text-gray-900">{exp.title}</p>
                     <p className="text-xs text-gray-500 mt-1">Paid by <span className="font-semibold text-indigo-600 capitalize">{exp.paid_by}</span></p>
@@ -189,7 +189,7 @@ const Finances=({ tripId, initialExpenses, members })=> {
           ) : (
             <div className="space-y-3">
               {settlements.map((settlement, i) => (
-                <div key={i} className="flex items-center gap-3 p-4 bg-red-50 text-red-800 rounded-xl text-sm font-medium">
+                <div key={`settlement-${settlement}-${i}`} className="flex items-center gap-3 p-4 bg-red-50 text-red-800 rounded-xl text-sm font-medium">
                   <ArrowRight className="h-4 w-4 shrink-0 text-red-500" />
                   {settlement}
                 </div>

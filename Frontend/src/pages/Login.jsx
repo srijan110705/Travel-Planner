@@ -32,6 +32,9 @@ const Login=()=> {
         withCredentials: true 
       });
 
+      // Store user info in localStorage for Dashboard
+      localStorage.setItem('currentUser', JSON.stringify({ username: identifier }));
+      
       navigate('/dashboard');
       
     } catch (err) {

@@ -16,8 +16,6 @@ router.post('/add_expense', verifyUser,verifyTrip, tripController.addExpense);
 
 router.get('/my_trips', verifyUser, tripController.getMyTrips);
 
-router.post('/settlements', verifyUser, verifyTrip, tripController.getDebtSettlements);
-
 router.post('/optimize_route', verifyUser, verifyTrip, tripController.getOptimalRoute);
 
 module.exports=router;
