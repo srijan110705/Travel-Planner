@@ -9,7 +9,6 @@ const Finances=({ tripId, initialExpenses, members })=> {
   // State for the "Add Expense" form
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
-  const [paidBy, setPaidBy] = useState(members[0]); // Defaults to the first member
   const [isLoading, setIsLoading] = useState(false);
 
   // --- THE MATH ENGINE ---
@@ -73,8 +72,7 @@ const Finances=({ tripId, initialExpenses, members })=> {
       const response = await axios.post('http://localhost:3000/api/trip/add_expense', {
         trip_id: tripId,
         title,
-        amount: parseFloat(amount),
-        paid_by: paidBy
+        amount: parseFloat(amount)
       }, { withCredentials: true });
 
       // Update the UI with the fresh data from MongoDB
@@ -122,12 +120,6 @@ const Finances=({ tripId, initialExpenses, members })=> {
                   required
                 />
               </div>
-              <select 
-                value={paidBy} onChange={(e) => setPaidBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white capitalize"
-              >
-                {members.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
             </div>
             <button 
               type="submit" disabled={isLoading}

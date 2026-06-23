@@ -11,10 +11,12 @@ router.post('/login_trip',verifyUser,tripController.access);
 router.post('/logout_trip',verifyUser,verifyTrip,tripController.logout);
 
 router.post('/add_destination', verifyUser, verifyTrip, tripController.addDestination);
+router.post('/remove_destination', verifyUser, verifyTrip, tripController.removeDestination);
 
-router.post('/add_expense', verifyUser,verifyTrip, tripController.addExpense);
+router.post('/add_expense', verifyUser, verifyTrip, tripController.addExpense);
 
 router.get('/my_trips', verifyUser, tripController.getMyTrips);
+router.get('/:trip_id', verifyUser, verifyTrip, tripController.getTrip);
 
 router.post('/optimize_route', verifyUser, verifyTrip, tripController.getOptimalRoute);
 

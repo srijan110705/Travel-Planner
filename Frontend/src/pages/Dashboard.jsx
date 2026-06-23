@@ -16,6 +16,9 @@ import { useTripAccess } from '../hooks/useTripAccess';
   const [optimizedRoute, setOptimizedRoute] = useState([]);
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState('');
+  const [routeInstructions, setRouteInstructions] = useState('');
+  const [newDestination, setNewDestination] = useState('');
+  const [addDestinationLoading, setAddDestinationLoading] = useState(false);
 
   // 0. Fetch current user on mount
   useEffect(() => {
@@ -55,35 +58,31 @@ import { useTripAccess } from '../hooks/useTripAccess';
     
   }, [navigate, location]);
 
-  // 2. Fetch optimized route when route tab is active
-  useEffect(() => {
-    const fetchRoute = async () => {
-      if (activeTab !== 'route' || !selectedTrip) return;
-      if (!selectedTrip.itinerary?.length) {
-        setOptimizedRoute([]);
-        return;
-      }
-
-      setRouteLoading(true);
+  const fetchRoute = async () => {
+    if (!selectedTrip) return;
+    if (!selectedTrip.itinerary?.length) {
+      setOptimizedRoute([]);
       setRouteError('');
+      return;
+    }
 
-      try {
-        const response = await axios.post('http://localhost:3000/api/trip/optimize_route', {
-          trip_id: selectedTrip.trip_id,
-          instructions: ""
-        }, { withCredentials: true });
+    setRouteLoading(true);
+    setRouteError('');
 
-        setOptimizedRoute(response.data.route || []);
-      } catch (error) {
-        console.error('Route optimization error', error);
-        setRouteError(error.response?.data?.message || 'Failed to load optimized route');
-      } finally {
-        setRouteLoading(false);
-      }
-    };
+    try {
+      const response = await axios.post('http://localhost:3000/api/trip/optimize_route', {
+        trip_id: selectedTrip.trip_id,
+        instructions: routeInstructions
+      }, { withCredentials: true });
 
-    fetchRoute();
-  }, [activeTab, selectedTrip]);
+      setOptimizedRoute(response.data.route || []);
+    } catch (error) {
+      console.error('Route optimization error', error);
+      setRouteError(error.response?.data?.message || 'Failed to load optimized route');
+    } finally {
+      setRouteLoading(false);
+    }
+  };
 
   // Handle Logout
   const handleLogout = async () => {
@@ -96,6 +95,45 @@ import { useTripAccess } from '../hooks/useTripAccess';
       localStorage.removeItem('currentUser');
       localStorage.removeItem('currentTrip');
       navigate('/login');
+    }
+  };
+
+  const handleAddDestination = async () => {
+    if (!newDestination.trim() || !selectedTrip) return;
+    setAddDestinationLoading(true);
+    try {
+      const response = await axios.post('http://localhost:3000/api/trip/add_destination', {
+        trip_id: selectedTrip.trip_id,
+        destination_data: newDestination.trim()
+      }, { withCredentials: true });
+
+      if (response.data.trip) {
+        setSelectedTrip(response.data.trip);
+      }
+      setNewDestination('');
+    } catch (error) {
+      console.error('Add destination error', error);
+      alert(error.response?.data?.message || 'Failed to add destination');
+    } finally {
+      setAddDestinationLoading(false);
+    }
+  };
+
+  const handleRemoveDestination = async (index) => {
+    if (!selectedTrip) return;
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/trip/remove_destination', {
+        trip_id: selectedTrip.trip_id,
+        destination_index: index
+      }, { withCredentials: true });
+
+      if (response.data.trip) {
+        setSelectedTrip(response.data.trip);
+      }
+    } catch (error) {
+      console.error('Remove destination error', error);
+      alert(error.response?.data?.message || 'Failed to remove destination');
     }
   };
 
@@ -187,7 +225,7 @@ import { useTripAccess } from '../hooks/useTripAccess';
 
             {/* Trip Tabs */}
             <div className="flex gap-6 border-b border-gray-200 mb-6">
-              {['itinerary', 'finances', 'route'].map((tab) => (
+              {['itinerary', 'finances'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -218,14 +256,41 @@ import { useTripAccess } from '../hooks/useTripAccess';
                       {selectedTrip.itinerary?.length ? (
                         <ol className="space-y-3 text-sm text-gray-700">
                           {selectedTrip.itinerary.map((destination, index) => (
-                            <li key={`${destination}-${index}`} className="rounded-2xl bg-indigo-50 p-4">
-                              <span className="font-semibold text-indigo-700">{index + 1}.</span> {destination}
+                            <li key={`${destination}-${index}`} className="rounded-2xl bg-indigo-50 p-4 flex items-center justify-between gap-4">
+                              <div>
+                                <span className="font-semibold text-indigo-700">{index + 1}.</span> {destination}
+                              </div>
+                              <button
+                                onClick={() => handleRemoveDestination(index)}
+                                className="rounded-full border border-rose-200 bg-white px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                              >
+                                Remove
+                              </button>
                             </li>
                           ))}
                         </ol>
                       ) : (
                         <p className="text-gray-500">No itinerary destinations have been added yet.</p>
                       )}
+
+                      <div className="mt-6 rounded-3xl border border-gray-200 bg-gray-50 p-5 shadow-sm">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Add New Destination</h4>
+                        <div className="space-y-3">
+                          <input
+                            value={newDestination}
+                            onChange={(e) => setNewDestination(e.target.value)}
+                            placeholder="Enter destination name"
+                            className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                          />
+                          <button
+                            onClick={handleAddDestination}
+                            disabled={addDestinationLoading || !newDestination.trim()}
+                            className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                          >
+                            {addDestinationLoading ? 'Adding...' : 'Add Destination'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
@@ -246,6 +311,71 @@ import { useTripAccess } from '../hooks/useTripAccess';
                       )}
                     </div>
                   </div>
+
+                  <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">Optimized Route</h4>
+                        <p className="text-gray-500 text-sm">This route is generated by the backend optimization service.</p>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+                      <div className="space-y-2">
+                        <label htmlFor="routeInstructions" className="text-sm font-semibold text-gray-900">Custom instructions</label>
+                        <textarea
+                          id="routeInstructions"
+                          rows={3}
+                          value={routeInstructions}
+                          onChange={(e) => setRouteInstructions(e.target.value)}
+                          placeholder="Enter instructions for Gemini on how to plan the route"
+                          className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+                      <button
+                        onClick={fetchRoute}
+                        className="inline-flex items-center justify-center rounded-2xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition"
+                      >
+                        Refresh Route
+                      </button>
+                    </div>
+                    </div>
+
+                    {routeLoading ? (
+                      <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
+                        <p className="font-medium">Loading optimized route...</p>
+                      </div>
+                    ) : routeError ? (
+                      <div className="rounded-3xl border border-rose-200 p-8 text-center bg-rose-50 text-rose-700">
+                        <p className="font-semibold">{routeError}</p>
+                        <p className="text-sm text-rose-600 mt-2">Make sure your trip itinerary has at least one destination.</p>
+                      </div>
+                    ) : selectedTrip.itinerary?.length === 0 ? (
+                      <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
+                        <p className="font-medium">No itinerary destinations yet.</p>
+                        <p className="text-sm mt-2">Add destinations to this trip before optimizing the route.</p>
+                      </div>
+                    ) : optimizedRoute?.length ? (
+                      <div className="space-y-6">
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-gray-100 shadow-sm">
+                          <ol className="space-y-3 text-sm text-gray-700">
+                            {optimizedRoute.map((stop, index) => (
+                              <li key={`${stop}-${index}`} className="rounded-2xl bg-white p-4 flex items-center gap-3 border border-gray-200">
+                                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">{index + 1}</span>
+                                <span>{stop}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-md">
+                          <p className="font-semibold">Route generated from the backend optimized itinerary.</p>
+                          <p className="text-sm text-indigo-100 mt-2">Refresh the route manually by clicking Refresh Route after updating the itinerary.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
+                        <p className="font-medium">No optimized route available yet.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -257,51 +387,6 @@ import { useTripAccess } from '../hooks/useTripAccess';
                     initialExpenses={selectedTrip.expenses || []} 
                     members={selectedTrip.members?.map(m => m.username || m._id) || []} 
                   />
-                </div>
-              )}
-
-              {activeTab === 'route' && (
-                <div className="animate-in fade-in duration-500">
-                  <h3 className="font-bold text-xl mb-2 text-gray-900">Optimized Route</h3>
-                  <p className="text-gray-500 text-sm mb-6">This route is generated by the backend optimization service.</p>
-
-                  {routeLoading ? (
-                    <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
-                      <p className="font-medium">Loading optimized route...</p>
-                    </div>
-                  ) : routeError ? (
-                    <div className="rounded-3xl border border-rose-200 p-8 text-center bg-rose-50 text-rose-700">
-                      <p className="font-semibold">{routeError}</p>
-                      <p className="text-sm text-rose-600 mt-2">Make sure your trip itinerary has at least one destination.</p>
-                    </div>
-                  ) : selectedTrip.itinerary?.length === 0 ? (
-                    <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
-                      <p className="font-medium">No itinerary destinations yet.</p>
-                      <p className="text-sm mt-2">Add destinations to this trip before optimizing the route.</p>
-                    </div>
-                  ) : optimizedRoute?.length ? (
-                    <div className="space-y-6">
-                      <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Route Order</h4>
-                        <ol className="space-y-3 text-sm text-gray-700">
-                          {optimizedRoute.map((stop, index) => (
-                            <li key={`${stop}-${index}`} className="rounded-2xl bg-slate-50 p-4 flex items-center gap-3">
-                              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-white font-bold">{index + 1}</span>
-                              <span>{stop}</span>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                      <div className="bg-indigo-600 text-white p-6 rounded-3xl shadow-md">
-                        <p className="font-semibold">Route generated from the backend optimized itinerary.</p>
-                        <p className="text-sm text-indigo-100 mt-2">Refresh the route by re-selecting the Route tab or adding new itinerary items.</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-3xl border border-gray-200 p-12 text-center bg-gray-50 text-gray-500">
-                      <p className="font-medium">No optimized route available yet.</p>
-                    </div>
-                  )}
                 </div>
               )}
 
