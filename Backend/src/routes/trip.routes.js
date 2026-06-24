@@ -16,8 +16,8 @@ router.post('/remove_destination', verifyUser, verifyTrip, tripController.remove
 router.post('/add_expense', verifyUser, verifyTrip, tripController.addExpense);
 
 router.get('/my_trips', verifyUser, tripController.getMyTrips);
-router.get('/:trip_id', verifyUser, verifyTrip, tripController.getTrip);
+/*router.get('/:trip_id', verifyUser, verifyTrip, tripController.getTrip);
 
-router.post('/optimize_route', verifyUser, verifyTrip, tripController.getOptimalRoute);
+router.post('/optimize_route', verifyUser, verifyTrip, tripController.getOptimalRoute);*/
 
 module.exports=router;
