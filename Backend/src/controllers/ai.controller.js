@@ -167,35 +167,42 @@ async function getOptimalRoute(req, res) {
         }
 
         const model = getGenerativeModel();
-        // Inside getOptimalRoute, replace everything from `const placesToVisit = ...` down to `const result = ...` with this:
-
+        
+        // Failsafe extraction
         const placesToVisit = trip.itinerary.map(item => item.itinerary || item.placeName || item).filter(Boolean).join(', ');
-        console.log(placesToVisit);
+
         if (!placesToVisit) {
-        return res.status(400).json({ message: "Error: Could not extract place names from the itinerary. Check your database structure." });
+            return res.status(400).json({ message: "Error: Could not extract place names from the itinerary. Check your database structure." });
         }
 
-        // 2. Stricter Prompt to stop hallucinations
-        const prompt = `You are a routing assistant. 
+        const prompt = `You are a travel routing assistant. 
         Reorder the following destinations into the most logically efficient travel route: ${placesToVisit}. 
         CRITICAL RULES:
         - DO NOT add any new places.
         - DO NOT remove any places.
-        - Return ONLY a raw JSON array of strings. No markdown.
+        - Return ONLY a raw JSON object. Do not include markdown formatting or extra text.
+        
+        You MUST use this EXACT JSON format:
+        {
+          "route": ["First Place", "Second Place"],
+          "timingNotes": "Write a helpful paragraph explaining the best times to visit these places in this order to avoid crowds or maximize the experience."
+        }
+        
         Additional instructions: ${instructions || 'None'}`;
 
         const result = await model.generateContent(prompt);
         let text = result.response.text().trim();
         
-        // Bulletproof parsing
-        const match = text.match(/\[[\s\S]*\]/);
-        if (!match) throw new Error("Gemini failed to return a valid JSON array.");
+        // Bulletproof parsing for a JSON Object (using curly braces instead of brackets)
+        const match = text.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error("Gemini failed to return a valid JSON object.");
 
-        const optimizedRoute = JSON.parse(match[0]);
+        const aiResponse = JSON.parse(match[0]);
 
         res.status(200).json({ 
             message: "Route optimized using Gemini AI", 
-            route: optimizedRoute 
+            route: aiResponse.route,
+            timingNotes: aiResponse.timingNotes
         });
         
     } catch (error) {
