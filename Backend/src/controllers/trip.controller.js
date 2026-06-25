@@ -1,202 +1,4 @@
-{/*const tripModel = require('../models/trip.model');
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-async function create(req, res) {
-    const { trip_name, trip_id, trip_pass } = req.body;
-
-    const hash = await bcrypt.hash(trip_pass, 10);
-
-    const trip = await tripModel.create({
-        trip_name,
-        trip_id,
-        trip_pass: hash,
-        members: [req.user._id] // FIX: Added the creator to the members array here
-    });
-
-    const token = jwt.sign({ id: trip._id }, process.env.JWT_SECRET);
-
-    res.cookie('trip_token', token);
-
-    res.status(201).json({
-        message: "New trip created successfully",
-        trip: {
-            trip_name,
-            trip_id
-        }
-    });
-}
-
-async function access(req, res) {
-    const { trip_id, trip_pass } = req.body;
-
-    const trip = await tripModel.findOne({ trip_id });
-
-    if (!trip) {
-        return res.status(401).json({
-            message: "Invalid|Trip does not exist"
-        });
-    }
-
-    const isPasswordValid = await bcrypt.compare(trip_pass, trip.trip_pass);
-
-    if (!isPasswordValid) {
-        return res.status(401).json({
-            message: "Incorrect Password"
-        });
-    }
-
-    // Add user to members array (MongoDB $addToSet prevents duplicates)
-    await tripModel.findByIdAndUpdate(trip._id, {
-        $addToSet: { members: req.user._id }
-    });
-
-    const token = jwt.sign({
-        id: trip._id
-    }, process.env.JWT_SECRET);
-
-    res.cookie("trip_token", token);
-
-    res.status(200).json({
-        message: "Login successful",
-    });
-}
-
-async function logout(req, res) {
-    res.clearCookie("trip_token");
-    
-    res.status(200).json({
-        message: "Logout successful"
-    });
-}
-
-async function addDestination(req, res) {
-    try {
-        const { trip_id, destination_data } = req.body;
-
-        const updatedTrip = await tripModel.findOneAndUpdate(
-            { trip_id: trip_id },
-            { $push: { itinerary: destination_data } },
-            { new: true } 
-        );
-
-        if (!updatedTrip) {
-            return res.status(404).json({ message: "Trip not found" });
-        }
-
-        const io = req.app.get('io');
-        io.to(trip_id).emit('trip_updated', updatedTrip);
-
-        res.status(200).json({ message: "Destination added successfully", trip: updatedTrip });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server error" });
-    }
-}
-
-async function addExpense(req, res) {
-    try {
-        const { trip_id, title, amount } = req.body;
-
-        const paid_by = req.user.username;
-
-        const updatedTrip = await tripModel.findOneAndUpdate(
-            { trip_id: trip_id },
-            { 
-                $push: { 
-                    expenses: { title, amount: Number(amount), paid_by } 
-                } 
-            },
-            { new: true } 
-        );
-
-        if (!updatedTrip) {
-            return res.status(404).json({ message: "Trip not found" });
-        }
-
-        res.status(200).json({ 
-            message: "Expense added successfully", 
-            expenses: updatedTrip.expenses 
-        });
-
-    } catch (error) {
-        console.error("Expense Error:", error);
-        res.status(500).json({ message: "Failed to add expense" });
-    }
-}
-
-async function getMyTrips(req, res) {
-    try {
-        const userId = req.user.id; 
-
-        const myTrips = await tripModel.find({ members: userId });
-
-        res.status(200).json({ trips: myTrips });
-    } catch (error) {
-        console.error("Fetch Trips Error:", error);
-        res.status(500).json({ message: "Failed to fetch trips" });
-    }
-}
-
-async function getDebtSettlements(req, res) {
-    try {
-        const { trip_id } = req.body;
-        const trip = await tripModel.findOne({ trip_id });
-        if (!trip) return res.status(404).json({ message: "Trip not found" });
-
-        let total = 0;
-        const paid = {};
-        
-        // Calculate total and how much each person paid
-        trip.expenses.forEach(e => {
-            total += e.amount;
-            paid[e.paid_by] = (paid[e.paid_by] || 0) + e.amount;
-        });
-
-        const participants = Object.keys(paid);
-        const split = participants.length ? total / participants.length : 0;
-        
-        // Separate into who owes money (debtors) and who gets money back (creditors)
-        let creditors = [], debtors = [];
-        participants.forEach(p => {
-            const diff = paid[p] - split;
-            if (diff > 0.01) creditors.push({ person: p, amount: diff });
-            else if (diff < -0.01) debtors.push({ person: p, amount: Math.abs(diff) });
-        });
-
-        // Calculate who pays whom
-        const settlements = [];
-        let i = 0, j = 0;
-        while (i < debtors.length && j < creditors.length) {
-            let amount = Math.min(debtors[i].amount, creditors[j].amount);
-            settlements.push({ 
-                from: debtors[i].person, 
-                to: creditors[j].person, 
-                amount: amount.toFixed(2) 
-            });
-            
-            debtors[i].amount -= amount;
-            creditors[j].amount -= amount;
-            
-            if (debtors[i].amount < 0.01) i++;
-            if (creditors[j].amount < 0.01) j++;
-        }
-
-        res.status(200).json({ total, split, settlements });
-    } catch (error) {
-        console.error("Settlement error:", error);
-        res.status(500).json({ message: "Failed to calculate settlements" });
-    }
-}
-
-
-
-module.exports = { access, logout, create, addDestination, addExpense, getMyTrips, getDebtSettlements, };*/}
-
 const tripModel = require('../models/trip.model');
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 async function create(req, res) {
@@ -204,17 +6,13 @@ async function create(req, res) {
 
     const hash = await bcrypt.hash(trip_pass, 10);
 
-    const trip = await tripModel.create({
+    await tripModel.create({
         trip_name,
         trip_id,
         trip_pass: hash,
         members: [req.user._id] 
     });
 
-    const token = jwt.sign({ id: trip._id }, process.env.JWT_SECRET);
-
-    res.cookie('trip_token', token);
-
     res.status(201).json({
         message: "New trip created successfully",
         trip: {
@@ -248,22 +46,8 @@ async function access(req, res) {
         $addToSet: { members: req.user._id }
     });
 
-    const token = jwt.sign({
-        id: trip._id
-    }, process.env.JWT_SECRET);
-
-    res.cookie("trip_token", token);
-
     res.status(200).json({
         message: "Login successful",
-    });
-}
-
-async function logout(req, res) {
-    res.clearCookie("trip_token");
-    
-    res.status(200).json({
-        message: "Logout successful"
     });
 }
 
@@ -280,8 +64,8 @@ async function addDestination(req, res) {
         const updatedTrip = await tripModel.findOneAndUpdate(
             { trip_id: trip_id },
             { $push: { itinerary: newDestination } },
-            { new: true } 
-        );
+            { returnDocument: 'after' } 
+        ).populate('members', 'username email');
 
         if (!updatedTrip) {
             return res.status(404).json({ message: "Trip not found" });
@@ -306,7 +90,7 @@ async function removeDestination(req, res) {
             return res.status(400).json({ message: "Trip ID and destination index are required" });
         }
 
-        const trip = await tripModel.findOne({ trip_id: trip_id });
+        let trip = await tripModel.findOne({ trip_id: trip_id }).populate('members', 'username email');
         if (!trip) {
             return res.status(404).json({ message: "Trip not found" });
         }
@@ -314,6 +98,7 @@ async function removeDestination(req, res) {
         // Splice removes the exact item from the array
         trip.itinerary.splice(destination_index, 1);
         await trip.save();
+        await trip.populate('members', 'username email');
 
         const io = req.app.get('io');
         if (io) io.to(trip_id).emit('trip_updated', trip);
@@ -339,8 +124,8 @@ async function addExpense(req, res) {
                     expenses: { title, amount: Number(amount), paid_by } 
                 } 
             },
-            { new: true } 
-        );
+            { returnDocument: 'after' } 
+        ).populate('members', 'username email');
 
         if (!updatedTrip) {
             return res.status(404).json({ message: "Trip not found" });
@@ -361,7 +146,7 @@ async function getMyTrips(req, res) {
     try {
         const userId = req.user.id; 
 
-        const myTrips = await tripModel.find({ members: userId });
+        const myTrips = await tripModel.find({ members: userId }).populate('members', 'username email');
 
         res.status(200).json({ trips: myTrips });
     } catch (error) {
@@ -370,52 +155,4 @@ async function getMyTrips(req, res) {
     }
 }
 
-async function getDebtSettlements(req, res) {
-    try {
-        const { trip_id } = req.body;
-        const trip = await tripModel.findOne({ trip_id });
-        if (!trip) return res.status(404).json({ message: "Trip not found" });
-
-        let total = 0;
-        const paid = {};
-        
-        trip.expenses.forEach(e => {
-            total += e.amount;
-            paid[e.paid_by] = (paid[e.paid_by] || 0) + e.amount;
-        });
-
-        const participants = Object.keys(paid);
-        const split = participants.length ? total / participants.length : 0;
-        
-        let creditors = [], debtors = [];
-        participants.forEach(p => {
-            const diff = paid[p] - split;
-            if (diff > 0.01) creditors.push({ person: p, amount: diff });
-            else if (diff < -0.01) debtors.push({ person: p, amount: Math.abs(diff) });
-        });
-
-        const settlements = [];
-        let i = 0, j = 0;
-        while (i < debtors.length && j < creditors.length) {
-            let amount = Math.min(debtors[i].amount, creditors[j].amount);
-            settlements.push({ 
-                from: debtors[i].person, 
-                to: creditors[j].person, 
-                amount: amount.toFixed(2) 
-            });
-            
-            debtors[i].amount -= amount;
-            creditors[j].amount -= amount;
-            
-            if (debtors[i].amount < 0.01) i++;
-            if (creditors[j].amount < 0.01) j++;
-        }
-
-        res.status(200).json({ total, split, settlements });
-    } catch (error) {
-        console.error("Settlement error:", error);
-        res.status(500).json({ message: "Failed to calculate settlements" });
-    }
-}
-
-module.exports = { access, logout, create, addDestination, removeDestination, addExpense, getMyTrips, getDebtSettlements };
+module.exports = { access, create, addDestination, removeDestination, addExpense, getMyTrips };

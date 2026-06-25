@@ -44,22 +44,23 @@ const tripModel = require('../models/trip.model');
 // 🎰 THE API KEY ROULETTE HELPER
 // ==========================================
 function getGenerativeModel() {
-    // 1. Grab the giant comma string from your .env
-    const keysString = process.env.GEMINI_API_KEY || "";
-    
-    // 2. Split it into an array and clean up spaces
-    const apiKeys = keysString.split(',').map(key => key.trim()).filter(Boolean);
+    // 1. Grab the 3 keys directly from your .env
+    const apiKeys = [
+        process.env.GEMINI_API_KEY_1,
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3
+    ].filter(Boolean); // This automatically removes any empty or undefined keys
     
     if (apiKeys.length === 0) {
-        throw new Error("No API keys found in the .env file!");
+        throw new Error("No API keys found! Add GEMINI_API_KEY_1, 2, and 3 to your .env file.");
     }
 
-    // 3. Pick a random key from your keys array
+    // 2. Pick a random key from the available ones
     const randomKey = apiKeys[Math.floor(Math.random() * apiKeys.length)];
     
-    // 4. Initialize and return the AI
+    // 3. Initialize and return the AI
     const genAI = new GoogleGenerativeAI(randomKey);
-    return genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    return genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 // ==========================================
@@ -98,7 +99,7 @@ async function generateTravelAdvice(req, res) {
         const updatedTrip = await tripModel.findOneAndUpdate(
             { trip_id: trip_id },
             { $set: { itinerary: itineraryArray } },
-            { new: true } 
+            { returnDocument: 'after' } 
         );
 
         if (!updatedTrip) return res.status(404).json({ message: "Trip not found in database" });
@@ -166,11 +167,21 @@ async function getOptimalRoute(req, res) {
         }
 
         const model = getGenerativeModel();
-        const placesToVisit = trip.itinerary.map(item => item.placeName).join(', ');
+        // Inside getOptimalRoute, replace everything from `const placesToVisit = ...` down to `const result = ...` with this:
 
-        const prompt = `You are a travel routing assistant. 
+        const placesToVisit = trip.itinerary.map(item => item.itinerary || item.placeName || item).filter(Boolean).join(', ');
+        console.log(placesToVisit);
+        if (!placesToVisit) {
+        return res.status(400).json({ message: "Error: Could not extract place names from the itinerary. Check your database structure." });
+        }
+
+        // 2. Stricter Prompt to stop hallucinations
+        const prompt = `You are a routing assistant. 
         Reorder the following destinations into the most logically efficient travel route: ${placesToVisit}. 
-        Return ONLY a raw JSON array of strings representing the ordered route. Do not include markdown formatting. 
+        CRITICAL RULES:
+        - DO NOT add any new places.
+        - DO NOT remove any places.
+        - Return ONLY a raw JSON array of strings. No markdown.
         Additional instructions: ${instructions || 'None'}`;
 
         const result = await model.generateContent(prompt);

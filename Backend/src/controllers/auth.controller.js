@@ -28,7 +28,7 @@ async function register(req,res){
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);    
 
-    res.cookie('auth_token',token);
+    res.cookie('token',token);
 
     res.status(201).json({
         message:"New user registered successfully",
@@ -67,7 +67,7 @@ async function login(req,res){
         id:user._id
     },process.env.JWT_SECRET);
 
-    res.cookie("auth_token", token);
+    res.cookie("token", token);
 
     res.status(200).json({
         message:"Login successful",
@@ -75,7 +75,7 @@ async function login(req,res){
 }
 
 async function logout(req, res) {
-    res.clearCookie("auth_token");
+    res.clearCookie("token");
     
     res.status(200).json({
         message: "Logout successful"

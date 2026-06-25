@@ -3,7 +3,7 @@ const userModel=require("../models/user.model");
 
 
 async function verifyUser(req,res,next){
-    const token=req.cookies.auth_token;
+    const token=req.cookies.token;
 
     if(!token){
         return res.status(401).json({

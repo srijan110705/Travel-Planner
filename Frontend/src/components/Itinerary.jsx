@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
-  const navigate = useNavigate(); // ✨ Added router navigation
-  
   const [newDestination, setNewDestination] = useState('');
   const [addDestinationLoading, setAddDestinationLoading] = useState(false);
 
   const [suggestionPrompt, setSuggestionPrompt] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
+
+  // New state for inline route optimization
+  const [optimizeLoading, setOptimizeLoading] = useState(false);
+  const [optimizedRoute, setOptimizedRoute] = useState([]);
+  const [optimizeInstructions, setOptimizeInstructions] = useState('');
 
   const handleAddDestination = async () => {
     if (!newDestination.trim()) return;
@@ -66,6 +68,23 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
       setSuggestions(prev => prev.filter(s => s.placeName !== suggestionObj.placeName));
     } catch (error) {
       console.error('Add suggestion error', error);
+    }
+  };
+
+  // New inline optimize function
+  const handleOptimizeRoute = async () => {
+    setOptimizeLoading(true);
+    try {
+      const response = await axios.post('http://localhost:3000/api/ai/optimize_route', {
+        trip_id: selectedTrip.trip_id,
+        instructions: optimizeInstructions
+      }, { withCredentials: true });
+      setOptimizedRoute(response.data.route || []);
+    } catch (error) {
+      alert('Failed to optimize route. Please try again.');
+      console.error(error);
+    } finally {
+      setOptimizeLoading(false);
     }
   };
 
@@ -178,27 +197,55 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: MASSIVELY REDUCED TO JUST LINK TO YOUR DEDICATED PAGE */}
+        {/* RIGHT COLUMN: INLINE ROUTE OPTIMIZER */}
         <div className="space-y-6">
-          <div className="bg-indigo-600 p-6 rounded-3xl shadow-md text-white text-center">
-            <h4 className="text-xl font-bold mb-2">Map Your Route</h4>
-            <p className="text-indigo-100 text-sm mb-6">Let AI sort your itinerary geographically for the perfect walking path.</p>
+          <div className="bg-indigo-600 p-6 rounded-3xl shadow-md text-center">
+            <h4 className="text-xl font-bold text-white mb-2">Optimize Route</h4>
+            <p className="text-indigo-100 text-sm mb-5">Let AI sort your itinerary for the most efficient travel path.</p>
+            
+            <input
+              value={optimizeInstructions}
+              onChange={(e) => setOptimizeInstructions(e.target.value)}
+              placeholder="Any specific rules? (e.g. End at a cafe)"
+              className="w-full rounded-2xl border border-indigo-400 bg-indigo-500/50 px-4 py-3 text-sm text-white placeholder-indigo-200 outline-none focus:border-white focus:ring-1 focus:ring-white mb-4"
+            />
+
             <button 
-              onClick={() => navigate('/optimize_route', { state: { selectedTripId: selectedTrip.trip_id } })}
-              className="px-6 py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-gray-50 transition w-full shadow-sm"
+              onClick={handleOptimizeRoute}
+              disabled={optimizeLoading || !selectedTrip.itinerary?.length}
+              className="px-6 py-3 bg-white text-indigo-700 font-bold rounded-xl hover:bg-indigo-50 transition w-full shadow-sm disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              Go to Route Optimizer →
+              {optimizeLoading ? 'Calculating optimal route...' : 'Map Best Route →'}
             </button>
+
+            {/* Display Optimized Route Results */}
+            {optimizedRoute.length > 0 && (
+              <div className="mt-6 text-left bg-indigo-700/50 p-5 rounded-2xl border border-indigo-500 text-white">
+                <h5 className="font-semibold text-sm uppercase tracking-wide text-indigo-200 mb-3">AI Recommended Path</h5>
+                <ol className="space-y-3">
+                  {optimizedRoute.map((place, index) => (
+                    <li key={`opt-${index}`} className="flex items-start gap-3 text-sm font-medium">
+                      <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-400 text-indigo-900 text-xs font-bold">
+                        {index + 1}
+                      </span>
+                      <span className="mt-0.5">{place}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
           </div>
 
           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">Trip Members</h4>
             {selectedTrip.members?.length ? (
               <ul className="space-y-3 text-sm text-gray-700">
-                {selectedTrip.members.map((member, index) => {
-                  const label = member?.username || member?.email || member?._id || `Member ${index + 1}`;
-                  return <li key={`${label}-${index}`} className="rounded-2xl bg-slate-50 p-4 font-medium">{label}</li>;
-                })}
+                {selectedTrip.members.map((member, index) => (
+                  <li key={`member-${index}`} className="rounded-2xl bg-slate-50 p-4 font-medium">
+                    {/* Now it will successfully read the populated username */}
+                    {member?.username || 'Unknown User'} 
+                  </li>
+                ))}
               </ul>
             ) : (
               <p className="text-gray-500">No members are currently listed.</p>
