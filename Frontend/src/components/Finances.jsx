@@ -2,7 +2,10 @@ import { useState, useMemo } from 'react';
 import axios from 'axios';
 import { DollarSign, Plus, ArrowRight, Receipt } from 'lucide-react';
 
-const Finances=({ tripId, initialExpenses, members })=> {
+const Finances = ({ tripId, initialExpenses, members }) => {
+  // ✨ FIXED: Added the dynamic API URL for Vercel/Render compatibility
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   // State for holding our list of expenses
   const [expenses, setExpenses] = useState(initialExpenses || []);
   
@@ -12,9 +15,8 @@ const Finances=({ tripId, initialExpenses, members })=> {
   const [isLoading, setIsLoading] = useState(false);
 
   // --- THE MATH ENGINE ---
-  // This hook automatically recalculates debts only when the 'expenses' array changes
-  const { totalSpent, balances, settlements } = useMemo(() => {
-    if (!expenses.length || !members.length) return { totalSpent: 0, balances: [], settlements: [] };
+  const { totalSpent, settlements } = useMemo(() => {
+    if (!expenses.length || !members.length) return { totalSpent: 0, settlements: [] };
 
     let total = 0;
     const paidAmounts = {};
@@ -57,7 +59,7 @@ const Finances=({ tripId, initialExpenses, members })=> {
       if (creditor.balance < 0.01) j++;
     }
 
-    return { totalSpent: total, balances: currentBalances, settlements: calculatedSettlements };
+    return { totalSpent: total, settlements: calculatedSettlements };
   }, [expenses, members]);
 
 
@@ -68,8 +70,8 @@ const Finances=({ tripId, initialExpenses, members })=> {
     setIsLoading(true);
 
     try {
-      // Call our Express backend to save this specific receipt
-      const response = await axios.post('http://localhost:3000/api/trip/add_expense', {
+      // ✨ FIXED: Now uses the dynamic API_URL
+      const response = await axios.post(`${API_URL}/api/trip/add_expense`, {
         trip_id: tripId,
         title,
         amount: parseFloat(amount)
@@ -139,7 +141,6 @@ const Finances=({ tripId, initialExpenses, members })=> {
             {expenses.length === 0 ? (
               <p className="text-gray-500 text-sm py-4 text-center">No expenses logged yet. Add your first one above!</p>
             ) : (
-              // Slice and reverse so the newest expenses show up at the very top
               expenses.slice().reverse().map((exp, i) => ( 
                 <div key={`${exp.title}-${exp.amount}-${exp.paid_by}-${i}`} className="flex justify-between items-center p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <div>
@@ -194,4 +195,4 @@ const Finances=({ tripId, initialExpenses, members })=> {
     </div>
   );
 }
-export default Finances
+export default Finances;
