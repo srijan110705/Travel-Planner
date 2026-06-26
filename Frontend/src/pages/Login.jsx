@@ -10,7 +10,8 @@ const Login=()=> {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
-  const API_URL = 'http://localhost:3000/api/auth/login';
+  // FIXED: Now uses the environment variable for Render
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const handleLogin = async (e) => {
     e.preventDefault(); 
@@ -24,7 +25,8 @@ const Login=()=> {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(API_URL, { 
+      // FIXED: Appended the specific auth route to the dynamic API_URL
+      const response = await axios.post(`${API_URL}/api/auth/login`, { 
         username: identifier, 
         email: identifier, 
         password: password 

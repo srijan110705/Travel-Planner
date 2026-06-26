@@ -18,9 +18,13 @@ const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState(null); 
   const [activePanel, setActivePanel] = useState('trips');
 
+  // FIXED: Added the dynamic API URL
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   const fetchTrips = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/trip/my_trips', { withCredentials: true });
+      // FIXED: Used API_URL
+      const response = await axios.get(`${API_URL}/api/trip/my_trips`, { withCredentials: true });
       const trips = response.data.trips || [];
       setMyTrips(trips);
       return trips;
@@ -53,7 +57,8 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:3000/api/auth/logout', {}, { withCredentials: true });
+      // FIXED: Used API_URL
+      await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
     } finally {
       localStorage.removeItem('currentUser');
       navigate('/login');
