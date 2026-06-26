@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: 'http://localhost:5173', // The exact URL of your Vite React app
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // The exact URL of your Vite React app
     credentials: true                // Required to allow cookies to pass through
 }));
 
