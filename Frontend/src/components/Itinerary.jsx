@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
+  // ✨ FIXED: Added the dynamic API URL for Vercel/Render compatibility
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
   const [newDestination, setNewDestination] = useState('');
   const [addDestinationLoading, setAddDestinationLoading] = useState(false);
 
@@ -11,14 +14,14 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
 
   const [optimizeLoading, setOptimizeLoading] = useState(false);
   const [optimizedRoute, setOptimizedRoute] = useState([]);
-  const [timingNotes, setTimingNotes] = useState(''); // ✨ New state for timing notes
+  const [timingNotes, setTimingNotes] = useState(''); 
   const [optimizeInstructions, setOptimizeInstructions] = useState('');
 
   const handleAddDestination = async () => {
     if (!newDestination.trim()) return;
     setAddDestinationLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/trip/add_destination', {
+      const response = await axios.post(`${API_URL}/api/trip/add_destination`, {
         trip_id: selectedTrip.trip_id,
         destination_data: newDestination.trim()
       }, { withCredentials: true });
@@ -33,7 +36,7 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
 
   const handleRemoveDestination = async (index) => {
     try {
-      const response = await axios.post('http://localhost:3000/api/trip/remove_destination', {
+      const response = await axios.post(`${API_URL}/api/trip/remove_destination`, {
         trip_id: selectedTrip.trip_id,
         destination_index: index
       }, { withCredentials: true });
@@ -47,7 +50,7 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
     if (!suggestionPrompt.trim()) return;
     setSuggestLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/ai/suggest', {
+      const response = await axios.post(`${API_URL}/api/ai/suggest`, {
         prompt: suggestionPrompt
       }, { withCredentials: true });
       setSuggestions(response.data.suggestions || []);
@@ -60,7 +63,7 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
 
   const handleAddSuggested = async (suggestionObj) => {
     try {
-      const response = await axios.post('http://localhost:3000/api/trip/add_destination', {
+      const response = await axios.post(`${API_URL}/api/trip/add_destination`, {
         trip_id: selectedTrip.trip_id,
         destination_data: suggestionObj 
       }, { withCredentials: true });
@@ -77,7 +80,7 @@ const Itinerary = ({ selectedTrip, setSelectedTrip }) => {
     setOptimizedRoute([]);
     setTimingNotes(''); 
     try {
-      const response = await axios.post('http://localhost:3000/api/ai/optimize_route', {
+      const response = await axios.post(`${API_URL}/api/ai/optimize_route`, {
         trip_id: selectedTrip.trip_id,
         instructions: optimizeInstructions
       }, { withCredentials: true });
