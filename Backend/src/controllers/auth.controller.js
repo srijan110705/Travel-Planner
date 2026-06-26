@@ -28,7 +28,11 @@ async function register(req,res){
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);    
 
-    res.cookie('token',token);
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,       // Required for cross-site cookies
+        sameSite: 'none'    // Tells the browser it's okay to send across different domains
+    });
 
     res.status(201).json({
         message:"New user registered successfully",
@@ -67,7 +71,11 @@ async function login(req,res){
         id:user._id
     },process.env.JWT_SECRET);
 
-    res.cookie("token", token);
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,       // Required for cross-site cookies
+        sameSite: 'none'    // Tells the browser it's okay to send across different domains
+    });
 
     res.status(200).json({
         message:"Login successful",
